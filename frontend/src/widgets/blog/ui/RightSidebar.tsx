@@ -1,9 +1,9 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
-import { Separator } from '@/shared/ui/separator';
-import { Eye, Users } from 'lucide-react';
-import { mostReadPosts, topChannels, topics } from '../lib/data';
 import { Badge } from '@/shared/ui/badge';
+import { Card, CardContent } from '@/shared/ui/card';
+import { Separator } from '@/shared/ui/separator';
+import { Eye, Hash, Users } from 'lucide-react';
+import { mostReadPosts, topChannels, topics } from '../lib/data';
 
 export function RightSidebar() {
   const formatNumber = (num: number) => {
@@ -16,7 +16,8 @@ export function RightSidebar() {
   return (
     <div className="space-y-6">
       {/* Most Read Posts */}
-      <h2 className="text-lg font-semibold mt-4 mb-2">
+      <h2 className="text-lg font-semibold mt-4 mb-2 flex items-center">
+        <Eye className="h-5 w-5 mr-2" />
         Most Read
       </h2>
       <Card className='bg-card/30 py-3'>
@@ -86,7 +87,9 @@ export function RightSidebar() {
         </CardContent>
       </Card>
 
-      <h2 className="text-lg font-semibold mt-4 mb-2 flex items-center">Topics</h2>
+      <h2 className="text-lg font-semibold mt-4 mb-2 flex items-center">
+        <Hash className="h-5 w-5 mr-2" />
+        Topics</h2>
       <Card className='bg-card/30 p-3'>
         <CardContent className='px-0'>
           <div className="flex flex-wrap gap-2">
