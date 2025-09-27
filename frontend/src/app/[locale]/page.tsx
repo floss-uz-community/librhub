@@ -1,3 +1,6 @@
+import { useTranslations } from "next-intl";
+
 export default function Home() {
-  return <>Hello, World</>;
+  const t = useTranslations()
+  return <>{t("title")}</>;
 }
