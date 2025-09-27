@@ -139,17 +139,4 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  
-  .blog-card-hover {
-    transition: all 0.2s ease-in-out;
-  }
-  
-  .blog-card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  }
-  
-  .dark .blog-card-hover:hover {
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
-  }
 }

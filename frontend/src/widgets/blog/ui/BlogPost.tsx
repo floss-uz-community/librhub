@@ -1,18 +1,18 @@
 "use client"
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader } from '@/shared/ui/card';
-import { Badge } from '@/shared/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
+import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
+import { Card, CardContent, CardHeader } from '@/shared/ui/card';
 import {
-    MessageCircle,
-    ThumbsUp,
-    ThumbsDown,
     Bookmark,
+    Clock,
     Eye,
+    MessageCircle,
     Share2,
-    Clock
+    ThumbsDown,
+    ThumbsUp
 } from 'lucide-react';
+import { useState } from 'react';
 
 interface BlogPostProps {
     post: {
@@ -82,7 +82,7 @@ export function BlogPost({ post }: BlogPostProps) {
     };
 
     return (
-        <Card className="blog-card-hover">
+        <Card>
             <CardHeader>
                 {/* Author Info */}
                 <div className="flex items-center space-x-3">
