@@ -33,11 +33,6 @@ const Navbar = () => {
           <div className="flex items-center gap-6">
             {/* Logo */}
             <Link href={'/'} className="flex items-center gap-2">
-              <img
-                src={PRODUCT_INFO.logo}
-                className="max-h-8"
-                alt={PRODUCT_INFO.name}
-              />
               <span className="text-lg font-semibold tracking-tighter">
                 {PRODUCT_INFO.name}
               </span>
