@@ -16,7 +16,7 @@ export function BlogLayout() {
 
           {/* Right Sidebar - Most Read and Top Channels */}
           <aside className="lg:col-span-3 order-3">
-            <div className="sticky top-8">
+            <div className="sticky top-4">
               <RightSidebar />
             </div>
           </aside>
