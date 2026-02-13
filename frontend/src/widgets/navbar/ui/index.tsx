@@ -1,5 +1,6 @@
 import { Accordion } from '@/shared/ui/accordion';
 import { Button } from '@/shared/ui/button';
+import { Input } from '@/shared/ui/input';
 import {
   NavigationMenu,
   NavigationMenuList,
@@ -11,7 +12,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/shared/ui/sheet';
-import { Menu } from 'lucide-react';
+import { Menu, Search } from 'lucide-react';
 import { menu } from '../lib/data';
 import { PRODUCT_INFO } from '@/shared/constants/data';
 import RenderMenuItem from './RenderItem';
@@ -33,11 +34,6 @@ const Navbar = () => {
           <div className="flex items-center gap-6">
             {/* Logo */}
             <Link href={'/'} className="flex items-center gap-2">
-              <img
-                src={PRODUCT_INFO.logo}
-                className="max-h-8"
-                alt={PRODUCT_INFO.name}
-              />
               <span className="text-lg font-semibold tracking-tighter">
                 {PRODUCT_INFO.name}
               </span>
@@ -50,14 +46,25 @@ const Navbar = () => {
               </NavigationMenu>
             </div>
           </div>
-          <div className="flex gap-2">
-            <ChangeLang />
-            <Button asChild variant="outline">
-              <Link href={auth.login.url}>{auth.login.title}</Link>
-            </Button>
-            <Button asChild>
-              <Link href={auth.signup.url}>{auth.signup.title}</Link>
-            </Button>
+          {/* Search Input */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              type="search"
+              placeholder="Search posts..."
+              className="pl-10 w-98"
+            />
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex gap-2">
+              <ChangeLang />
+              <Button asChild variant="outline">
+                <Link href={auth.login.url}>{auth.login.title}</Link>
+              </Button>
+              <Button asChild>
+                <Link href={auth.signup.url}>{auth.signup.title}</Link>
+              </Button>
+            </div>
           </div>
         </nav>
 
@@ -94,6 +101,16 @@ const Navbar = () => {
                   </SheetTitle>
                 </SheetHeader>
                 <div className="flex flex-col gap-6 p-4">
+                  {/* Mobile Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      type="search"
+                      placeholder="Search posts..."
+                      className="pl-10 w-full"
+                    />
+                  </div>
+
                   <Accordion
                     type="single"
                     collapsible
