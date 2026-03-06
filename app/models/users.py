@@ -56,20 +56,32 @@ class User(BaseModel):
         "PostBookmark", back_populates="user"
     )
     followers: Mapped[list["UserFollow"]] = relationship(
-        "UserFollow", foreign_keys="UserFollow.followed_user_id", back_populates="followed_user"
+        "UserFollow",
+        foreign_keys="UserFollow.followed_user_id",
+        back_populates="followed_user",
     )
     following: Mapped[list["UserFollow"]] = relationship(
-        "UserFollow", foreign_keys="UserFollow.follower_user_id", back_populates="follower_user"
+        "UserFollow",
+        foreign_keys="UserFollow.follower_user_id",
+        back_populates="follower_user",
     )
     notifications: Mapped[list["Notification"]] = relationship(
-        "Notification", foreign_keys="Notification.recipient_user_id", back_populates="recipient"
+        "Notification",
+        foreign_keys="Notification.recipient_user_id",
+        back_populates="recipient",
     )
     sent_notifications: Mapped[list["Notification"]] = relationship(
-        "Notification", foreign_keys="Notification.actor_user_id", back_populates="actor"
+        "Notification",
+        foreign_keys="Notification.actor_user_id",
+        back_populates="actor",
     )
     reports: Mapped[list["ModerationReport"]] = relationship(
-        "ModerationReport", foreign_keys="ModerationReport.reporter_user_id", back_populates="reporter"
+        "ModerationReport",
+        foreign_keys="ModerationReport.reporter_user_id",
+        back_populates="reporter",
     )
     moderation_actions: Mapped[list["ModerationAction"]] = relationship(
-        "ModerationAction", foreign_keys="ModerationAction.moderator_user_id", back_populates="moderator"
+        "ModerationAction",
+        foreign_keys="ModerationAction.moderator_user_id",
+        back_populates="moderator",
     )

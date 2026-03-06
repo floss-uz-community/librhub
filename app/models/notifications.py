@@ -27,7 +27,9 @@ class Notification(BaseModel):
     )
     payload: Mapped[str] = mapped_column(String(2000), nullable=False, default="{}")
     is_read: Mapped[bool] = mapped_column(default=False)
-    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    read_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     recipient: Mapped["User"] = relationship(
         "User",

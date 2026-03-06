@@ -21,4 +21,3 @@ class PostBookmark(BaseModel):
 
     post: Mapped["Post"] = relationship("Post", back_populates="bookmarks")
     user: Mapped["User"] = relationship("User", back_populates="bookmarks")
-

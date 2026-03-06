@@ -40,7 +40,9 @@ class ModerationAction(BaseModel):
     )
 
     report_id: Mapped[int] = mapped_column(
-        BigInteger, ForeignKey("moderation_report.id", ondelete="CASCADE"), nullable=False
+        BigInteger,
+        ForeignKey("moderation_report.id", ondelete="CASCADE"),
+        nullable=False,
     )
     moderator_user_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("user.id", ondelete="SET NULL"), nullable=True
@@ -56,4 +58,3 @@ class ModerationAction(BaseModel):
     moderator: Mapped["User | None"] = relationship(
         "User", foreign_keys=[moderator_user_id], back_populates="moderation_actions"
     )
-

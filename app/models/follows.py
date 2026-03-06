@@ -69,4 +69,3 @@ class CategoryFollow(BaseModel):
 
     user: Mapped["User"] = relationship("User")
     category: Mapped["Category"] = relationship("Category", back_populates="followers")
-

@@ -23,4 +23,3 @@ class PostRevision(BaseModel):
 
     post: Mapped["Post"] = relationship("Post", back_populates="revisions")
     editor: Mapped["User | None"] = relationship("User")
-

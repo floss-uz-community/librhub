@@ -37,4 +37,3 @@ class ModerationActionType(str, Enum):
     DELETE = "delete"
     BAN = "ban"
     RESTORE = "restore"
-

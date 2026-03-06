@@ -53,4 +53,3 @@ class CommentVote(BaseModel):
 
     comment: Mapped["Comment"] = relationship("Comment", back_populates="votes")
     user: Mapped["User"] = relationship("User", back_populates="comment_votes")
-
