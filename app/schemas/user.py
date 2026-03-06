@@ -2,6 +2,7 @@ from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional
 from datetime import datetime
 
+
 class UserBase(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -30,3 +31,14 @@ class UserResponse(UserBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    bio: Optional[str] = None
+    profession_id: Optional[int] = None
+    is_active: Optional[bool] = None
+    is_staff: Optional[bool] = None
+    is_superuser: Optional[bool] = None

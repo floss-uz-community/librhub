@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
-from app.schemas.user import UserCreate, UserResponse
+from app.schemas.user import UserCreate, UserResponse, UserUpdate
 from app.db.session import get_db
 from app.models.profession import Profession
 from app.models.users import User
 from app.core.security import hash_password
+from app.api.dependencies import current_user_jwt_dep
 
 router = APIRouter()
 
@@ -17,16 +19,15 @@ def _normalize_username(user_in: UserCreate) -> str:
     return user_in.email.split("@")[0].strip().lower()
 
 
+def _can_manage_target_user(current_user: User, target_user_id: int) -> bool:
+    return current_user.is_superuser or current_user.id == target_user_id
+
+
 @router.post("/register", response_model=UserResponse)
-async def user_create(
-    user_in: UserCreate,
-    db: AsyncSession = Depends(get_db)
-):
+async def user_create(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
     username = _normalize_username(user_in)
     profession_id = (
-        None
-        if user_in.profession_id in (None, 0)
-        else user_in.profession_id
+        None if user_in.profession_id in (None, 0) else user_in.profession_id
     )
 
     existing_user_by_email = await db.scalar(
@@ -66,8 +67,8 @@ async def user_create(
         bio=user_in.bio or "",
         profession_id=profession_id,
         is_active=user_in.is_active,
-        is_staff=user_in.is_staff,
-        is_superuser=user_in.is_superuser,
+        is_staff=False,
+        is_superuser=False,
     )
 
     try:
@@ -82,3 +83,83 @@ async def user_create(
         )
 
     return new_user
+
+
+@router.get("/list", response_model=list[UserResponse])
+async def users_list(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User))
+    users = result.scalars().all()
+    return users
+
+
+@router.get("/{user_id}/", response_model=UserResponse)
+async def user_detail(user_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        return JSONResponse(
+            {"error": "User not found"}, status_code=status.HTTP_404_NOT_FOUND
+        )
+    return user
+
+
+@router.put("/{user_id}/", response_model=UserResponse)
+async def user_update(
+    user_id: int,
+    user_in: UserUpdate,
+    current_user: current_user_jwt_dep,
+    db: AsyncSession = Depends(get_db),
+):
+    if not _can_manage_target_user(current_user, user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions.",
+        )
+
+    update_data = user_in.model_dump(exclude_unset=True)
+    if (
+        "is_staff" in update_data or "is_superuser" in update_data
+    ) and not current_user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only superusers can change role flags.",
+        )
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        return JSONResponse(
+            {"error": "User not found"}, status_code=status.HTTP_404_NOT_FOUND
+        )
+
+    for field, value in update_data.items():
+        setattr(user, field, value)
+
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+@router.delete("/{user_id}")
+async def user_delete(
+    user_id: int,
+    current_user: current_user_jwt_dep,
+    db: AsyncSession = Depends(get_db),
+):
+    if not _can_manage_target_user(current_user, user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions.",
+        )
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        return JSONResponse(
+            {"error": "User not found"}, status_code=status.HTTP_404_NOT_FOUND
+        )
+
+    await db.delete(user)
+    await db.commit()
+    return JSONResponse(status_code=status.HTTP_204_NO_CONTENT)

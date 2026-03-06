@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     SMTP_SERVER: Optional[str] = None
     SMTP_PORT: Optional[int] = None
 
+
 settings = Settings()
 
 POSTGRES_URL = settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")

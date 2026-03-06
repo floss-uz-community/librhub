@@ -3,7 +3,8 @@ from email.mime.text import MIMEText
 from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException
 from passlib.context import CryptContext
-from jose import jwt, JWTError
+import jwt
+from jwt import InvalidTokenError
 from app.core.config import settings
 
 
@@ -24,26 +25,26 @@ def verify_password(plain_password: str, hashed_password: str):
 
 def generate_jwt_tokens(user_id: int, is_access_only: bool = False):
     access_token = jwt.encode(
-        algorithm=settings.ALGORITHM,
-        key=settings.SECRET_KEY,
-        claims={
+        payload={
             "sub": str(user_id),
             "exp": datetime.now(timezone.utc)
             + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
         },
+        key=settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM,
     )
 
     if is_access_only:
         return access_token
 
     refresh_token = jwt.encode(
-        algorithm=settings.ALGORITHM,
-        key=settings.SECRET_KEY,
-        claims={
+        payload={
             "sub": str(user_id),
             "exp": datetime.now(timezone.utc)
             + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
         },
+        key=settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM,
     )
 
     return access_token, refresh_token
@@ -55,8 +56,8 @@ def decode_jwt_token(token: str):
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
         return payload
-    except JWTError as e:
-        raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
+    except InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid or expired token.")
 
 
 def send_email(to_email: str, subject: str, body: str):
