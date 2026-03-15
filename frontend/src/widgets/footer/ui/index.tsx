@@ -3,9 +3,9 @@ import { ModeToggle } from '@/shared/ui/theme-toggle';
 
 const Footer = () => {
   return (
-    <section className="py-32">
+    <section>
       <div className="my-container">
-        <div className="mt-8 flex flex-col justify-between gap-4 border-t pt-8 text-center text-sm font-medium text-muted-foreground lg:flex-row lg:items-center lg:text-left">
+        <div className="mt-8 flex flex-col justify-between gap-4 border-t pt-2 text-center text-sm font-medium text-muted-foreground lg:flex-row lg:items-center lg:text-left">
           <p>
             © {new Date().getFullYear()} {PRODUCT_INFO.creator}. All rights
             reserved.
