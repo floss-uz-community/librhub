@@ -1,9 +1,14 @@
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from app.api.v1.endpoints.auth import router as auth_router
+from app.api.v1.endpoints.bookmarks import router as bookmarks_router
 from app.api.v1.endpoints.categories import router as categories_router
 from app.api.v1.endpoints.comments import router as comments_router
+from app.api.v1.endpoints.follows import router as follows_router
+from app.api.v1.endpoints.notifications import router as notifications_router
 from app.api.v1.endpoints.posts import router as posts_router
+from app.api.v1.endpoints.professions import router as professions_router
+from app.api.v1.endpoints.revisions import router as revisions_router
 from app.api.v1.endpoints.tags import router as tags_router
 from app.api.v1.endpoints.users import router as users_router
 from app.api.v1.endpoints.votes import router as votes_router
@@ -16,6 +21,11 @@ app.include_router(categories_router, prefix="/api/v1/categories", tags=["Catego
 app.include_router(tags_router, prefix="/api/v1/tags", tags=["Tags"])
 app.include_router(comments_router, prefix="/api/v1/comments", tags=["Comments"])
 app.include_router(votes_router, prefix="/api/v1/votes", tags=["Votes"])
+app.include_router(bookmarks_router, prefix="/api/v1/bookmarks", tags=["Bookmarks"])
+app.include_router(follows_router, prefix="/api/v1/follows", tags=["Follows"])
+app.include_router(professions_router, prefix="/api/v1/professions", tags=["Professions"])
+app.include_router(notifications_router, prefix="/api/v1/notifications", tags=["Notifications"])
+app.include_router(revisions_router, prefix="/api/v1/revisions", tags=["Revisions"])
 
 
 @app.get("/")
