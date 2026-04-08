@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.dependencies import pagination_dep
 from app.db.session import get_db
 from app.models.post import Post
 from app.models.revisions import PostRevision
@@ -12,7 +13,11 @@ router = APIRouter()
 
 
 @router.get("/post/{post_id}/", response_model=list[RevisionResponse])
-async def revisions_by_post(post_id: int, db: AsyncSession = Depends(get_db)):
+async def revisions_by_post(
+    post_id: int,
+    pagination: pagination_dep,
+    db: AsyncSession = Depends(get_db),
+):
     post = await db.scalar(select(Post).where(Post.id == post_id))
     if not post:
         return JSONResponse(
@@ -23,6 +28,8 @@ async def revisions_by_post(post_id: int, db: AsyncSession = Depends(get_db)):
         select(PostRevision)
         .where(PostRevision.post_id == post_id)
         .order_by(PostRevision.created_at.desc())
+        .offset(pagination.offset)
+        .limit(pagination.limit)
     )
     return result.scalars().all()
 

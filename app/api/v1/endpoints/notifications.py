@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import current_user_jwt_dep
+from app.api.dependencies import current_user_jwt_dep, pagination_dep
 from app.db.session import get_db
 from app.models.notifications import Notification
 from app.schemas.notification import NotificationResponse
@@ -15,6 +15,7 @@ router = APIRouter()
 
 @router.get("/", response_model=list[NotificationResponse])
 async def notifications_list(
+    pagination: pagination_dep,
     unread_only: bool = Query(False),
     current_user: current_user_jwt_dep = ...,
     db: AsyncSession = Depends(get_db),
@@ -28,6 +29,7 @@ async def notifications_list(
     if unread_only:
         stmt = stmt.where(Notification.is_read == False)
 
+    stmt = stmt.offset(pagination.offset).limit(pagination.limit)
     result = await db.execute(stmt)
     return result.scalars().all()
 

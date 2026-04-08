@@ -1,7 +1,7 @@
 from typing import Annotated
 from datetime import datetime, timezone
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException, Query, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy import select
@@ -122,3 +122,16 @@ async def get_current_user_jwt(
 
 
 current_user_jwt_dep = Annotated[User, Depends(get_current_user_jwt)]
+
+
+class PaginationParams:
+    def __init__(
+        self,
+        offset: int = Query(0, ge=0),
+        limit: int = Query(20, ge=1, le=100),
+    ):
+        self.offset = offset
+        self.limit = limit
+
+
+pagination_dep = Annotated[PaginationParams, Depends()]

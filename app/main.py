@@ -5,6 +5,7 @@ from app.api.v1.endpoints.bookmarks import router as bookmarks_router
 from app.api.v1.endpoints.categories import router as categories_router
 from app.api.v1.endpoints.comments import router as comments_router
 from app.api.v1.endpoints.follows import router as follows_router
+from app.api.v1.endpoints.media import router as media_router
 from app.api.v1.endpoints.notifications import router as notifications_router
 from app.api.v1.endpoints.posts import router as posts_router
 from app.api.v1.endpoints.professions import router as professions_router
@@ -26,6 +27,7 @@ app.include_router(follows_router, prefix="/api/v1/follows", tags=["Follows"])
 app.include_router(professions_router, prefix="/api/v1/professions", tags=["Professions"])
 app.include_router(notifications_router, prefix="/api/v1/notifications", tags=["Notifications"])
 app.include_router(revisions_router, prefix="/api/v1/revisions", tags=["Revisions"])
+app.include_router(media_router, prefix="/api/v1/media", tags=["Media"])
 
 
 @app.get("/")

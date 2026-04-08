@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import current_user_jwt_dep
+from app.api.dependencies import current_user_jwt_dep, pagination_dep
 from app.db.session import get_db
 from app.models.profession import Profession
 from app.models.users import User
@@ -22,8 +22,13 @@ def _require_staff(user: User) -> None:
 
 
 @router.get("/", response_model=list[ProfessionResponse])
-async def professions_list(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Profession).order_by(Profession.name))
+async def professions_list(
+    pagination: pagination_dep,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Profession).order_by(Profession.name).offset(pagination.offset).limit(pagination.limit)
+    )
     return result.scalars().all()
 
 

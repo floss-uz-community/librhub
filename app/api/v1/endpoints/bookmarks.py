@@ -3,7 +3,7 @@ from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import current_user_jwt_dep
+from app.api.dependencies import current_user_jwt_dep, pagination_dep
 from app.db.session import get_db
 from app.models.bookmarks import PostBookmark
 from app.models.post import Post
@@ -14,6 +14,7 @@ router = APIRouter()
 
 @router.get("/", response_model=list[BookmarkResponse])
 async def bookmarks_list(
+    pagination: pagination_dep,
     current_user: current_user_jwt_dep,
     db: AsyncSession = Depends(get_db),
 ):
@@ -21,6 +22,8 @@ async def bookmarks_list(
         select(PostBookmark)
         .where(PostBookmark.user_id == current_user.id)
         .order_by(PostBookmark.created_at.desc())
+        .offset(pagination.offset)
+        .limit(pagination.limit)
     )
     return result.scalars().all()
 

@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import current_user_jwt_dep
+from app.api.dependencies import current_user_jwt_dep, pagination_dep
 from app.db.session import get_db
 from app.models.comments import Comment
 from app.models.enums import CommentStatus
@@ -19,7 +19,11 @@ def _can_manage_comment(current_user: User, comment: Comment) -> bool:
 
 
 @router.get("/post/{post_id}/", response_model=list[CommentResponse])
-async def comments_by_post(post_id: int, db: AsyncSession = Depends(get_db)):
+async def comments_by_post(
+    post_id: int,
+    pagination: pagination_dep,
+    db: AsyncSession = Depends(get_db),
+):
     post = await db.scalar(select(Post).where(Post.id == post_id))
     if not post:
         return JSONResponse(
@@ -30,6 +34,8 @@ async def comments_by_post(post_id: int, db: AsyncSession = Depends(get_db)):
         select(Comment)
         .where(Comment.post_id == post_id, Comment.status == CommentStatus.VISIBLE)
         .order_by(Comment.created_at)
+        .offset(pagination.offset)
+        .limit(pagination.limit)
     )
     return result.scalars().all()
 

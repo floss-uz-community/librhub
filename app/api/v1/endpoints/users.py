@@ -8,7 +8,7 @@ from app.db.session import get_db
 from app.models.profession import Profession
 from app.models.users import User
 from app.core.security import hash_password
-from app.api.dependencies import current_user_jwt_dep
+from app.api.dependencies import current_user_jwt_dep, pagination_dep
 
 router = APIRouter()
 
@@ -86,10 +86,14 @@ async def user_create(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/list", response_model=list[UserResponse])
-async def users_list(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User))
-    users = result.scalars().all()
-    return users
+async def users_list(
+    pagination: pagination_dep,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(User).offset(pagination.offset).limit(pagination.limit)
+    )
+    return result.scalars().all()
 
 
 @router.get("/{user_id}/", response_model=UserResponse)

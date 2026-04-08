@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import current_user_jwt_dep
+from app.api.dependencies import current_user_jwt_dep, pagination_dep
 from app.core.security import generate_slug
 from app.db.session import get_db
 from app.models.tags import Tag
@@ -31,8 +31,13 @@ def _normalize_tag_slug(name: str, slug: str | None) -> str:
 
 
 @router.get("/", response_model=list[TagResponse])
-async def tags_list(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Tag).order_by(Tag.name))
+async def tags_list(
+    pagination: pagination_dep,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Tag).order_by(Tag.name).offset(pagination.offset).limit(pagination.limit)
+    )
     return result.scalars().all()
 
 

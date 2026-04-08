@@ -6,13 +6,14 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import current_user_jwt_dep
+from app.api.dependencies import current_user_jwt_dep, pagination_dep
 from app.core.security import generate_slug
 from app.db.session import get_db
 from app.models.category import Category
 from app.models.enums import PostStatus
 from app.models.post import Post
 from app.models.post_tag import PostTag
+from app.models.revisions import PostRevision
 from app.models.users import User
 from app.models.votes import PostVote
 from app.schemas.post import PostCreate, PostResponse, PostUpdate
@@ -54,6 +55,7 @@ def _validate_schedule_fields(
 
 @router.get("/", response_model=list[PostResponse])
 async def posts_list(
+    pagination: pagination_dep,
     status_filter: PostStatus | None = Query(None, alias="status"),
     category_id: int | None = None,
     tag_id: int | None = None,
@@ -70,18 +72,23 @@ async def posts_list(
             PostTag.tag_id == tag_id
         )
 
-    stmt = stmt.order_by(Post.created_at.desc())
+    stmt = stmt.order_by(Post.created_at.desc()).offset(pagination.offset).limit(pagination.limit)
     result = await db.execute(stmt)
     return result.scalars().all()
 
 
 @router.get("/trending", response_model=list[PostResponse])
-async def posts_trending(db: AsyncSession = Depends(get_db)):
+async def posts_trending(
+    pagination: pagination_dep,
+    db: AsyncSession = Depends(get_db),
+):
     stmt = (
         select(Post)
         .outerjoin(PostVote, PostVote.post_id == Post.id)
         .group_by(Post.id)
         .order_by(func.count(PostVote.id).desc(), Post.created_at.desc())
+        .offset(pagination.offset)
+        .limit(pagination.limit)
     )
     result = await db.execute(stmt)
     return result.scalars().all()
@@ -194,6 +201,15 @@ async def post_update(
         update_data["published_at"] = datetime.now(timezone.utc)
 
     update_data["edited_at"] = datetime.now(timezone.utc)
+
+    if "title" in update_data or "body" in update_data:
+        revision = PostRevision(
+            post_id=post.id,
+            editor_user_id=current_user.id,
+            title=post.title,
+            body=post.body,
+        )
+        db.add(revision)
 
     for field, value in update_data.items():
         setattr(post, field, value)
