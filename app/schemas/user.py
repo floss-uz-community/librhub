@@ -1,6 +1,8 @@
-from pydantic import BaseModel, EmailStr, ConfigDict
-from typing import Optional
+import re
 from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
 
 class UserBase(BaseModel):
@@ -17,6 +19,17 @@ class UserCreate(UserBase):
     is_active: bool = True
     is_staff: bool = False
     is_superuser: bool = False
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("at least 8 characters required")
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("must contain at least one uppercase letter")
+        if not re.search(r"\d", v):
+            raise ValueError("must contain at least one digit")
+        return v
 
 
 class UserResponse(UserBase):

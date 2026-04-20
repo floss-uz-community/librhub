@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str
 
     DATABASE_URL: str
+    REDIS_URL: str = "redis://localhost:6379/0"
     SECRET_KEY: str
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
@@ -24,6 +25,8 @@ class Settings(BaseSettings):
     EMAIL_PASSWORD: Optional[str] = None
     SMTP_SERVER: Optional[str] = None
     SMTP_PORT: Optional[int] = None
+    ALLOWED_ORIGINS: list[str] = ["http://localhost:3000"]
+    REQUIRE_EMAIL_VERIFICATION: bool = False
 
 
 settings = Settings()

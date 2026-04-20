@@ -2,16 +2,22 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.dependencies import current_user_jwt_dep, pagination_dep
 from app.db.session import get_db
 from app.models.comments import Comment
-from app.models.enums import CommentStatus
+from app.models.enums import CommentStatus, NotificationType
 from app.models.post import Post
 from app.models.users import User
 from app.schemas.comment import CommentCreate, CommentResponse, CommentUpdate
+from app.services.notifications import create_notification
 
 router = APIRouter()
+
+
+def _comment_options():
+    return [selectinload(Comment.author)]
 
 
 def _can_manage_comment(current_user: User, comment: Comment) -> bool:
@@ -32,6 +38,7 @@ async def comments_by_post(
 
     result = await db.execute(
         select(Comment)
+        .options(*_comment_options())
         .where(Comment.post_id == post_id, Comment.status == CommentStatus.VISIBLE)
         .order_by(Comment.created_at)
         .offset(pagination.offset)
@@ -42,7 +49,9 @@ async def comments_by_post(
 
 @router.get("/{comment_id}/", response_model=CommentResponse)
 async def comment_detail(comment_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Comment).where(Comment.id == comment_id))
+    result = await db.execute(
+        select(Comment).options(*_comment_options()).where(Comment.id == comment_id)
+    )
     comment = result.scalar_one_or_none()
     if not comment:
         return JSONResponse(
@@ -63,6 +72,7 @@ async def comment_create(
             status_code=status.HTTP_404_NOT_FOUND, detail="Post not found."
         )
 
+    parent = None
     if body.parent_id is not None:
         parent = await db.scalar(
             select(Comment).where(
@@ -84,9 +94,32 @@ async def comment_create(
     )
 
     db.add(comment)
+    await db.flush()
+
+    if post.user_id:
+        await create_notification(
+            db,
+            recipient_user_id=post.user_id,
+            actor_user_id=current_user.id,
+            type=NotificationType.COMMENT_ON_POST,
+            payload={"post_id": post.id, "comment_id": comment.id},
+        )
+
+    if parent is not None and parent.user_id:
+        await create_notification(
+            db,
+            recipient_user_id=parent.user_id,
+            actor_user_id=current_user.id,
+            type=NotificationType.COMMENT_REPLY,
+            payload={"post_id": post.id, "comment_id": comment.id, "parent_id": body.parent_id},
+        )
+
     await db.commit()
-    await db.refresh(comment)
-    return comment
+
+    result = await db.execute(
+        select(Comment).options(*_comment_options()).where(Comment.id == comment.id)
+    )
+    return result.scalar_one()
 
 
 @router.put("/{comment_id}/", response_model=CommentResponse)
@@ -124,8 +157,11 @@ async def comment_update(
 
     db.add(comment)
     await db.commit()
-    await db.refresh(comment)
-    return comment
+
+    result = await db.execute(
+        select(Comment).options(*_comment_options()).where(Comment.id == comment.id)
+    )
+    return result.scalar_one()
 
 
 @router.delete("/{comment_id}/", status_code=status.HTTP_204_NO_CONTENT)

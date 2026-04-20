@@ -20,6 +20,7 @@ class NotificationType(str, Enum):
     COMMENT_ON_POST = "comment_on_post"
     POST_PUBLISHED = "post_published"
     POST_APPROVED = "post_approved"
+    POST_VOTED = "post_voted"
     NEW_FOLLOWER = "new_follower"
     MENTION = "mention"
     SYSTEM = "system"

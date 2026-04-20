@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import current_user_jwt_dep, pagination_dep
 from app.db.session import get_db
 from app.models.category import Category
+from app.models.enums import NotificationType
 from app.models.follows import CategoryFollow, TagFollow, UserFollow
 from app.models.tags import Tag
 from app.models.users import User
@@ -14,6 +15,7 @@ from app.schemas.follow import (
     TagFollowResponse,
     UserFollowResponse,
 )
+from app.services.notifications import create_notification
 
 router = APIRouter()
 
@@ -72,6 +74,16 @@ async def user_follow_create(
 
     follow = UserFollow(follower_user_id=current_user.id, followed_user_id=user_id)
     db.add(follow)
+    await db.flush()
+
+    await create_notification(
+        db,
+        recipient_user_id=user_id,
+        actor_user_id=current_user.id,
+        type=NotificationType.NEW_FOLLOWER,
+        payload={"follower_user_id": current_user.id},
+    )
+
     await db.commit()
     await db.refresh(follow)
     return follow

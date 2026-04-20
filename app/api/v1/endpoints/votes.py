@@ -6,9 +6,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import current_user_jwt_dep
 from app.db.session import get_db
 from app.models.comments import Comment
+from app.models.enums import NotificationType
 from app.models.post import Post
 from app.models.votes import CommentVote, PostVote
 from app.schemas.vote import CommentVoteResponse, PostVoteResponse, VoteCreate
+from app.services.notifications import create_notification
 
 router = APIRouter()
 
@@ -50,6 +52,17 @@ async def post_vote_create(
 
     vote = PostVote(post_id=post_id, user_id=current_user.id, value=body.value)
     db.add(vote)
+    await db.flush()
+
+    if post.user_id:
+        await create_notification(
+            db,
+            recipient_user_id=post.user_id,
+            actor_user_id=current_user.id,
+            type=NotificationType.POST_VOTED,
+            payload={"post_id": post_id, "value": body.value},
+        )
+
     await db.commit()
     await db.refresh(vote)
     return vote

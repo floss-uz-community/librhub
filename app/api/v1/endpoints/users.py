@@ -1,13 +1,22 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+
 from app.schemas.user import UserCreate, UserResponse, UserUpdate
 from app.db.session import get_db
 from app.models.profession import Profession
 from app.models.users import User
-from app.core.security import hash_password
+from app.core.security import (
+    hash_password,
+    generate_typed_token,
+    decode_typed_token,
+    send_email,
+)
+from app.core.limiter import limiter
 from app.api.dependencies import current_user_jwt_dep, pagination_dep
 
 router = APIRouter()
@@ -24,7 +33,13 @@ def _can_manage_target_user(current_user: User, target_user_id: int) -> bool:
 
 
 @router.post("/register", response_model=UserResponse)
-async def user_create(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def user_create(
+    request: Request,
+    user_in: UserCreate,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
     username = _normalize_username(user_in)
     profession_id = (
         None if user_in.profession_id in (None, 0) else user_in.profession_id
@@ -82,7 +97,34 @@ async def user_create(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
             detail="User with provided credentials already exists.",
         )
 
+    token = generate_typed_token(new_user.id, "email_verify", expire_minutes=24 * 60)
+    background_tasks.add_task(
+        send_email,
+        new_user.email,
+        "Verify your LibrHub email",
+        f"Click the link to verify your email:\n\n"
+        f"http://localhost:3000/verify-email?token={token}\n\n"
+        f"This link expires in 24 hours.",
+    )
+
     return new_user
+
+
+@router.get("/verify-email")
+async def verify_email(token: str = Query(...), db: AsyncSession = Depends(get_db)):
+    user_id = decode_typed_token(token, "email_verify")
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    if user.email_verified_at is not None:
+        return {"detail": "Email already verified."}
+
+    user.email_verified_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"detail": "Email verified successfully."}
 
 
 @router.get("/list", response_model=list[UserResponse])

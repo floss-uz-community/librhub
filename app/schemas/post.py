@@ -1,7 +1,26 @@
 from datetime import datetime
+from typing import Optional
+
 from pydantic import BaseModel, ConfigDict
 
 from app.models.enums import PostStatus
+
+
+class AuthorBrief(BaseModel):
+    id: int
+    username: str
+    display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CategoryBrief(BaseModel):
+    id: int
+    name: str
+    slug: str
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PostCreate(BaseModel):
@@ -45,5 +64,7 @@ class PostResponse(BaseModel):
     deleted_at: datetime | None
     created_at: datetime
     updated_at: datetime
+    author: AuthorBrief | None = None
+    category: CategoryBrief | None = None
 
     model_config = ConfigDict(from_attributes=True)

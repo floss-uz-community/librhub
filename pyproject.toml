@@ -17,4 +17,5 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0.47",
     "uvicorn>=0.40.0",
     "argon2-cffi>=25.1.0",
+    "slowapi>=0.1.9",
 ]

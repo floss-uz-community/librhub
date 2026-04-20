@@ -2,9 +2,10 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import JSONResponse, Response
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.dependencies import current_user_jwt_dep, pagination_dep
 from app.core.security import generate_slug
@@ -19,6 +20,10 @@ from app.models.votes import PostVote
 from app.schemas.post import PostCreate, PostResponse, PostUpdate
 
 router = APIRouter()
+
+
+def _post_options():
+    return [selectinload(Post.author), selectinload(Post.category)]
 
 
 def _can_manage_target_post(current_user: User, post: Post) -> bool:
@@ -59,9 +64,10 @@ async def posts_list(
     status_filter: PostStatus | None = Query(None, alias="status"),
     category_id: int | None = None,
     tag_id: int | None = None,
+    q: str | None = Query(None, description="Search in title and body"),
     db: AsyncSession = Depends(get_db),
 ):
-    stmt = select(Post)
+    stmt = select(Post).options(*_post_options())
 
     if status_filter is not None:
         stmt = stmt.where(Post.status == status_filter)
@@ -71,6 +77,9 @@ async def posts_list(
         stmt = stmt.join(PostTag, PostTag.post_id == Post.id).where(
             PostTag.tag_id == tag_id
         )
+    if q:
+        term = f"%{q}%"
+        stmt = stmt.where(Post.title.ilike(term) | Post.body.ilike(term))
 
     stmt = stmt.order_by(Post.created_at.desc()).offset(pagination.offset).limit(pagination.limit)
     result = await db.execute(stmt)
@@ -84,6 +93,7 @@ async def posts_trending(
 ):
     stmt = (
         select(Post)
+        .options(*_post_options())
         .outerjoin(PostVote, PostVote.post_id == Post.id)
         .group_by(Post.id)
         .order_by(func.count(PostVote.id).desc(), Post.created_at.desc())
@@ -96,12 +106,19 @@ async def posts_trending(
 
 @router.get("/{post_id}/", response_model=PostResponse)
 async def post_detail(post_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Post).where(Post.id == post_id))
+    result = await db.execute(
+        select(Post).options(*_post_options()).where(Post.id == post_id)
+    )
     post = result.scalar_one_or_none()
     if not post:
         return JSONResponse(
             {"error": "Post not found"}, status_code=status.HTTP_404_NOT_FOUND
         )
+    await db.execute(
+        update(Post).where(Post.id == post_id).values(views_count=Post.views_count + 1)
+    )
+    await db.commit()
+    await db.refresh(post)
     return post
 
 
@@ -151,7 +168,10 @@ async def post_create(
             detail="Post with provided data already exists.",
         )
 
-    return new_post
+    result = await db.execute(
+        select(Post).options(*_post_options()).where(Post.id == new_post.id)
+    )
+    return result.scalar_one()
 
 
 @router.put("/{post_id}/", response_model=PostResponse)
@@ -216,8 +236,11 @@ async def post_update(
 
     db.add(post)
     await db.commit()
-    await db.refresh(post)
-    return post
+
+    result = await db.execute(
+        select(Post).options(*_post_options()).where(Post.id == post.id)
+    )
+    return result.scalar_one()
 
 
 @router.delete("/{post_id}/", status_code=status.HTTP_204_NO_CONTENT)
